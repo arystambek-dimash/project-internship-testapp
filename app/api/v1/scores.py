@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.depends import get_db
 from app.schemas.score import ScoreCreate, ScoreInDB
 from app.crud.score import scores_crud
+from app.crud.student import students_crud
 
 router = APIRouter()
 
@@ -23,6 +24,9 @@ async def get_score(score_id: int, db: AsyncSession = Depends(get_db)):
 @router.post("/", response_model=ScoreInDB)
 async def create_score(score: ScoreCreate, db: AsyncSession = Depends(get_db)):
     try:
+        db_student = await students_crud.get(db, score.student_id)
+        if not db_student:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
         inserted_id = await scores_crud.create(db, score)
         score = await scores_crud.get(db, inserted_id)
         if not score:
